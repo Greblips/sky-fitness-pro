@@ -11,7 +11,7 @@ import {
 import { imagesMap } from 'consts'
 import { getProgressTemplate } from 'helpers/helpers'
 import type { IUserState } from 'types'
-import style from './ProfilePage.module.scss'
+import style from 'pages/profilePage/profilePage.module.scss'
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 export const ProfilePage = () => {
@@ -89,10 +89,15 @@ export const ProfilePage = () => {
 
   const resultCourses = doCoursesExist ? [...(userState.courses ?? []), editPopUpCourse[0]] : [editPopUpCourse[0]]
   const resultCoursesForDel = doCoursesExist && userState.courses.filter((el) => el !== editPopUpCourse[0])
-  const { mutate: addCourse } = useAddCourseQuery(resultCourses as string[], resultProgress as IUserState['progress'])
-  const { mutate: deleteCourse } = useDeleteCourseQuery(
+  const {
+    mutate: addCourse,
+    isPending: isAddCourseLoading,
+    isError,
+    error,
+  } = useAddCourseQuery(resultCourses as string[], resultProgress as IUserState['progress'])
+  const { mutate: deleteCourse, isPending: isDeleteCourseLoading } = useDeleteCourseQuery(
     resultCoursesForDel as string[],
-    resultProgress as IUserState['progress'],
+    editPopUpCourse[0],
   )
 
   const closeFunc = () => {
@@ -102,12 +107,18 @@ export const ProfilePage = () => {
 
   const agreeFunc = cardEditPopUp === 'delete' ? () => deleteCourse() : () => addCourse()
 
-  if (isUserStateLoading || isCoursesFromDBLoading || isWorkoutsFromDBLoading) {
-    return <LoaderSpinner />
-  }
+  const isAnythingLoading =
+    isUserStateLoading ||
+    isCoursesFromDBLoading ||
+    isWorkoutsFromDBLoading ||
+    isAddCourseLoading ||
+    isDeleteCourseLoading
+
+  if (isError) console.warn(error)
 
   return (
     <div className={style.container}>
+      {isAnythingLoading && <LoaderSpinner />}
       <ProfileEdit variant={authPopUp} closeFunc={closeFunc} />
       <CourseAddPopup variant={cardEditPopUp} course={editPopUpCourse} agreeFunc={agreeFunc} closeFunc={closeFunc} />
 
